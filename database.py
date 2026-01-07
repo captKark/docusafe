@@ -19,3 +19,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 4. Declarative Base
 # This is the base class for all your DB models/tables
 Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
