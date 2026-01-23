@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
+import oauth2
 import models
 import schemas
 import utils
@@ -38,6 +39,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user) # Refresh to get the new ID and other generated fields
     return db_user # Return the created user (will be serialized by Pydantic)
 
+
+# Get Users Endpoints 
+# GET /users/me - Get current logged-in user
+@router.get("/me", response_model=schemas.UserResponse) # Return Safe Response Schema
+def get_current_user(current_user: models.User = Depends(oauth2.get_current_user)):
+    return current_user # Return the current logged-in user (will be serialized by Pydantic)
 
 # 2. GET ALL Users (Returns List of Safe Schemas)
 @router.get("/", response_model=List[schemas.UserResponse]) # Return List of Safe Response Schemas

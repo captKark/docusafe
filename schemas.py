@@ -17,3 +17,7 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True # Tells Pydantic to read from ORM models
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
