@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 # Base Schema (Shared properties)
@@ -21,3 +22,19 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# INPUT: What the user sends to create a Document
+class DocumentCreate(BaseModel):
+    title: str
+    content: str
+
+# OUTPUT: What we send back to the user
+class DocumentResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    created_at: datetime
+    owner_id: int
+
+    class Config:
+        from_attributes = True
