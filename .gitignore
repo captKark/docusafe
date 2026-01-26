@@ -1,3 +1,13 @@
-venv/
+# Python junk
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Virtual Environment (Don't upload this!)
+venv/
+env/
+
+# Environment Variables (Keep secrets safe!)
+.env
+
+# IDE settings
+.vscode/
