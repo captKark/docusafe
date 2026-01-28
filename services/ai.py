@@ -12,30 +12,29 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
 )
 
-def test_ai_connection():
+def summarize_document(text: str) -> str:
     """
-    A simple test to see if the brain is working.
+    Uses the AI to generate a summary of the given document content.
     """
-    print("🤖 Contacting the AI Module...")
-    
-    try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", # High performance, open source model
-            messages=[
-                {"role": "system", "content": "You are a helpful backend assistant."},
-                {"role": "user", "content": "Say 'Hello Docusafe Developer' and nothing else."}
-            ]
-        )
-        
-        # Extract the message
-        response = completion.choices[0].message.content
-        print(f"✅ Success! AI Responded: {response}")
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error connecting to AI: {e}")
-        return False
+    print("🤖 Generating document summary...")
 
-# This allows us to run this file directly to test it
-if __name__ == "__main__":
-    test_ai_connection()
+    # Call the AI to summarize
+    try:
+        # we asssume that the conten must be long, so we ask for a concise summary
+        chat_completion=client.chat.completions.create(
+            messages=[
+                {
+                    "role":"system",
+                    "content": "You are an expert document summarizer. Provide concise and clear summaries. Summarize the following text in 2-3 concise sentences."
+                },
+                {
+                    "role":"user",
+                    "content":text,
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+        )
+        return chat_completion.choices[0].message.content or "Summary could not be generated."
+    except Exception as e:
+        print(f"❌ Error generating summary: {e}")
+        return "Summary could not be generated."

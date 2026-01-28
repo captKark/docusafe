@@ -26,6 +26,8 @@ class Document(Base):
     content = Column(Text, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    summary = Column(String, nullable=True)
+
 
     # Foreign key relationship to User
     # It says: the number in this column must exist in the users.id column

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemas, oauth2
 from database import get_db
+from services import ai
 
 router = APIRouter(
     prefix="/documents",
@@ -48,3 +49,22 @@ def create_document(document: schemas.DocumentCreate, db: Session = Depends(get_
     db.refresh(new_document)
     
     return new_document
+
+#_______________________________________________________________
+# 3. SUMMARIZE A DOCUMENT
+@router.post("{id}/summarize")
+def summarize_document(id:int, db:Session=Depends(get_db), current_user: models.User=Depends(oauth2.get_current_user)):
+    # Find the Document by ID. Ensure it belongs to the current user.
+    document=db.query(models.Document).filter(models.Document.id==id, models.Document.owner_id==current_user.id).first()
+    # If not found, raise 404
+    if not document:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+    # Use the AI service to generate a summary
+    print(f"🤖 Generating summary for Document {id}...")
+    ai_summary = ai.summarize_document(document.content)
+
+    # Save to Database
+    document.ai_summary = ai_summary
+    db.commit()
+
+    return {"message": "Summary generated","summary": ai_summary}
