@@ -35,6 +35,7 @@ class DocumentResponse(BaseModel):
     content: str
     created_at: datetime
     owner_id: int
+    summary: str | None = None # Optional field for summary / Summary can be Null
 
     class Config:
         from_attributes = True

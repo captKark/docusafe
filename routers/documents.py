@@ -1,9 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks # <-- Added BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemas, oauth2
-from database import get_db
+from database import get_db, SessionLocal # <-- To get a New DB Session
 from services import ai
 
 router = APIRouter(
@@ -52,19 +52,49 @@ def create_document(document: schemas.DocumentCreate, db: Session = Depends(get_
 
 #_______________________________________________________________
 # 3. SUMMARIZE A DOCUMENT
-@router.post("{id}/summarize")
-def summarize_document(id:int, db:Session=Depends(get_db), current_user: models.User=Depends(oauth2.get_current_user)):
-    # Find the Document by ID. Ensure it belongs to the current user.
-    document=db.query(models.Document).filter(models.Document.id==id, models.Document.owner_id==current_user.id).first()
-    # If not found, raise 404
+@router.post("/{id}/summarize")
+def summarize_document(
+    id: int, 
+    background_tasks: BackgroundTasks, # <--- Inject the tool
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(oauth2.get_current_user)
+):
+    # 1. Check if document exists & belongs to user
+    document = db.query(models.Document).filter(models.Document.id == id, models.Document.owner_id == current_user.id).first()
+
     if not document:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
-    # Use the AI service to generate a summary
-    print(f"🤖 Generating summary for Document {id}...")
-    ai_summary = ai.summarize_document(document.content)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
-    # Save to Database
-    document.ai_summary = ai_summary
-    db.commit()
+    # 2. Add to Queue (Don't wait for it!)
+    background_tasks.add_task(task_generate_summary, document.id, document.content)
 
-    return {"message": "Summary generated","summary": ai_summary}
+    # 3. Reply Instantly
+    return {"message": "Summary generation started in the background", "status": "processing"}
+
+#_______________________________________________________________
+# 4. ASYNC SUMMARIZE A DOCUMENT
+def task_generate_summary(doc_id:int, content:str ):
+    """
+    this runs in the background to prevent blocking the main thread
+    this opens its own DB session, talks to AIm and saves the summary
+    """
+    print(f"⏳ Background Task: Starting summary for Doc {doc_id}...")
+
+    # talk to the AI service. this takes time but no one is waiting
+    ai_summary = ai.summarize_document(content)
+    
+    # Create a new DB session
+    db = SessionLocal()
+
+    # Call the AI service to generate a summary
+    try:
+        # Fetch and update the document
+        document=db.query(models.Document).filter(models.Document.id == doc_id).first()
+        if document:
+            document.summary = ai_summary
+            db.commit()
+            print(f"✅ Background Task: Doc {doc_id} updated successfully.")
+    except Exception as e:
+            print(f"❌ Background Task Failed: {e}")
+    finally:
+        db.close() # Always close the session
