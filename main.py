@@ -6,10 +6,10 @@ from routers import users, auth, documents
 
 
 # CREATE THE FASTAPI INSTANCE / THE APP
-app = FastAPI()
+app=FastAPI()
 
 # DATABASE SETUP: AUTO-CREATE TABLES 
-models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind = engine)
 
 # CORS (Optional, but good for frontend-backend communication)
 app.add_middleware(
