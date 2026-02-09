@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from database import get_db
 import models, schemas, utils, auth
+from limiter import limiter # <-- Import the limiter instance we set up
 
 # Create the router for authentication 
 router = APIRouter(
@@ -10,9 +11,11 @@ router = APIRouter(
 )
 # Login Endpoint
 @router.post("/login", response_model=schemas.Token)    
-
-def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute") # <-- Apply rate limit to this endpoint (5 requests per minute)
+def login(request: Request, user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # OAuth2PasswordRequestForm has 'username' and 'password' fields
+    # Note: You MUST add 'request: Request' to the function arguments 
+    # so slowapi knows who to ban!
     user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
     
     # If user does not exist, raise error
