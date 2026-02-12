@@ -18,13 +18,22 @@ models.Base.metadata.create_all(bind = engine)
 
 app.state.limiter = limiter # <-- Attach the limiter to the app state
 
+# --- CORSE SECURITY MIDDLEWARE ---
+# define who can talk to our API from other origins
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "https://docusafe-frontend.onrender.com"
+]
+
 # CORS (Optional, but good for frontend-backend communication)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow any Frontend to talk to us/  Adjust as needed for security
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins, # Only allow these domains
+    allow_credentials=True, # Allow cookies/auth headers
+    allow_methods=["GET", "POST", "PUT", "DELETE"], # Explicitly list allowed methods
+    allow_headers=["Authorization", "Content-Type"], # Explicitly list allowed headers
 )
 
 # CONNECT ROUTERs

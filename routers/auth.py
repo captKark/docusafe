@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from database import get_db
-import models, schemas, utils, auth
+import models, schemas, utils, security
 from limiter import limiter # <-- Import the limiter instance we set up
 
 # Create the router for authentication 
@@ -27,7 +27,7 @@ def login(request: Request, user_credentials: OAuth2PasswordRequestForm = Depend
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials")
     
     # Sucess! Create JWT Token
-    access_token = auth.create_access_token(data={"user_id": user.id})
+    access_token = security.create_access_token(data={"user_id": user.id})
     
     # Return the token
     return {"access_token": access_token, "token_type": "bearer"}

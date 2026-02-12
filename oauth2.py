@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import database, models, auth
+import database, models, security
 
 # this tells FastAPI that the route to get a new token is /login
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -17,7 +17,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         # Decode the token using our secret key and algorithm
-        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
 
         # Extract the user_id from the payload
         user_id: int = payload.get("user_id")
